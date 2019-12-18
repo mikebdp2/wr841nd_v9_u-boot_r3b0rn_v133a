@@ -31,6 +31,7 @@
 #include <malloc.h>
 #include <zlib.h>
 #include <bzlib.h>
+#include <LzmaWrapper.h> /* cu570m */
 #include <environment.h>
 #include <asm/byteorder.h>
 
@@ -148,6 +149,55 @@ image_header_t header;
 
 ulong load_addr = CFG_LOAD_ADDR;		/* Default Load Address */
 
+/* cu570m start */
+#ifdef FW_RECOVERY
+	ushort fw_recovery = 0;
+#endif
+
+#define CONFIG_LZMA 1
+
+/* changed by lqm, 18Jan08 */
+#include "tpLinuxTag.h"		/* support TP-LINK Linux Tag */
+
+// TODO: pass these values via an external MACRO /* cu570m */
+LINUX_FLASH_STRUCT linuxFlash =
+						{
+							0x000000,	/* boot loader 	*/
+							0x01fc00,	/* mac address	*/
+							0x01fe00,	/* pin address	*/
+							0x020000,	/* kernel		*/
+							0x120000,	/* root fs		*/
+							0x3e0000,	/* config		*/
+							0x3f0000,	/* radio		*/
+						};
+
+/* added by lqm, 18Jan08, copy from fake_zimage_header() */
+image_header_t *fake_image_header(image_header_t *hdr, ulong kernelTextAddr, ulong entryPoint, int size)
+{
+	ulong checksum = 0;
+
+	memset(hdr, 0, sizeof(image_header_t));
+
+	/* Build new header */
+	hdr->ih_magic = htonl(IH_MAGIC);
+	hdr->ih_time  = 0;
+	hdr->ih_size  = htonl(size);
+	hdr->ih_load  = htonl(kernelTextAddr);
+	hdr->ih_ep    = htonl(entryPoint);
+	hdr->ih_dcrc  = htonl(checksum);
+	hdr->ih_os    = IH_OS_LINUX;
+	hdr->ih_arch  = IH_CPU_MIPS;
+	hdr->ih_type  = IH_TYPE_KERNEL;
+	hdr->ih_comp  = IH_COMP_GZIP;
+
+	strncpy((char *)hdr->ih_name, "(none)", IH_NMLEN);
+
+	hdr->ih_hcrc = htonl(checksum);
+
+	return hdr;
+}
+/* cu570m end */
+
 int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	ulong	iflag;
@@ -160,8 +210,10 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	int	(*appl)(int, char *[]);
 	image_header_t *hdr = &header;
 
-	s = getenv ("verify");
-	verify = (s && (*s == 'n')) ? 0 : 1;
+	ulong	kernelTextAddr, kernelEntryPoint, kernelLen;	/* cu570m addition */
+	// s = getenv ("verify");				/* cu570m removal */
+	// verify = (s && (*s == 'n')) ? 0 : 1;		/* cu570m removal */
+	verify = 0;						/* cu570m addition */
 
 	if (argc < 2) {
 		addr = load_addr;
@@ -172,6 +224,8 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	show_boot_progress (1);
 	printf ("## Booting image at %08lx ...\n", addr);
 
+/* cu570m big removal 1 - start */
+#if 0
 	/* Copy header so we can blank CRC field for re-calculation */
 #ifdef CONFIG_HAS_DATAFLASH
 	if (addr_dataflash(addr)){
@@ -223,12 +277,29 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 	/* for multi-file images we need the data part, too */
 	print_image_hdr ((image_header_t *)addr);
+#endif /* custom big removal 1 - end */
 
-	data = addr + sizeof(image_header_t);
+/* cu570m start */
+	name = (char *) addr;
+
+	kernelTextAddr = *(ulong *)(name+116);
+	kernelEntryPoint = *(ulong *)(name+120);
+	kernelLen = *(ulong *)(name+132);
+
+	fake_image_header(hdr, kernelTextAddr, kernelEntryPoint, kernelLen);
+/* cu570m end */
+
+	// data = addr + sizeof(image_header_t);	/* cu570m removal */
+	data = addr + 512;				/* cu570m addition */
 	len  = ntohl(hdr->ih_size);
 
+	// TODO: check the magic number and checksum of fileTag /* cu570m */
+	show_boot_progress (2);			/* cu570m addition */
+
+/* cu570m big removal 2 - start */
+#if 0
 	if (verify) {
-		puts ("   Verifying Checksum ... ");
+		printf("   Verifying Checksum at 0x%p ...", data); /* cu570m */
 		if (crc32 (0, (uchar *)data, len) != ntohl(hdr->ih_dcrc)) {
 			printf ("Bad Data CRC\n");
 			show_boot_progress (-3);
@@ -295,6 +366,10 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		show_boot_progress (-5);
 		return 1;
 	}
+#endif /* cu570m big removal 2 - end */
+
+	name = "Kernel Image"; /* cu570m */
+
 	show_boot_progress (6);
 
 	/*
@@ -316,6 +391,21 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	dcache_disable();
 #endif
 
+/* cu570m start */
+#if defined(CONFIG_AR7100) || defined(CONFIG_AR7240) || defined(CONFIG_ATHEROS)
+	/*
+	 * Flush everything, restore caches for linux
+	 */
+	mips_cache_flush();
+	mips_icache_flush_ix();
+
+	/* XXX - this causes problems when booting from flash */
+	/* dcache_disable(); */
+#endif
+/* cu570m end */
+
+/* cu570m big removal 3 - start */
+#if 0
 	switch (hdr->ih_comp) {
 	case IH_COMP_NONE:
 		if(ntohl(hdr->ih_load) == addr) {
@@ -341,6 +431,8 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 #endif	/* CONFIG_HW_WATCHDOG || CONFIG_WATCHDOG */
 		}
 		break;
+
+#ifndef COMPRESSED_UBOOT /* cu570m */
 	case IH_COMP_GZIP:
 		printf ("   Uncompressing %s ... ", name);
 		if (gunzip ((void *)ntohl(hdr->ih_load), unc_len,
@@ -368,6 +460,24 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		}
 		break;
 #endif /* CONFIG_BZIP2 */
+#endif /* #ifndef COMPRESSED_UBOOT */ /* cu570m */
+#endif /* cu570m big removal 3 - end */
+
+#ifdef CONFIG_LZMA /* cu570m start */
+	// case IH_COMP_LZMA: /* cu570m removal */
+		printf ("   Uncompressing %s ... ", name);
+		i = lzma_inflate ((unsigned char *)data, len, (unsigned char*)ntohl(hdr->ih_load), &unc_len);
+		if (i != LZMA_RESULT_OK) {
+			printf ("LZMA ERROR %d - must RESET board to recover\n", i);
+			show_boot_progress (-6);
+			// udelay(100000); /* cu570m removal */
+			do_reset (cmdtp, flag, argc, argv);
+		}
+		// break; /* cu570m removal */
+#endif /* CONFIG_LZMA */ /* cu570m end */
+
+/* cu570m big removal 4 - start */
+#if 0
 	default:
 		if (iflag)
 			enable_interrupts();
@@ -375,9 +485,14 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		show_boot_progress (-7);
 		return 1;
 	}
+#endif
+/* cu570m big removal 4 - end */
+
 	puts ("OK\n");
 	show_boot_progress (7);
 
+/* cu570m big removal 5 - start */
+#if 0
 	switch (hdr->ih_type) {
 	case IH_TYPE_STANDALONE:
 		if (iflag)
@@ -411,11 +526,16 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	switch (hdr->ih_os) {
 	default:			/* handled by (original) Linux case */
 	case IH_OS_LINUX:
+#endif /* cu570m big removal 5 - end */
+
 #ifdef CONFIG_SILENT_CONSOLE
 	    fixup_silent_linux();
 #endif
 	    do_bootm_linux  (cmdtp, flag, argc, argv,
 			     addr, len_ptr, verify);
+
+/* cu570m big removal 6 - start */
+#if 0
 	    break;
 	case IH_OS_NETBSD:
 	    do_bootm_netbsd (cmdtp, flag, argc, argv,
@@ -451,6 +571,7 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	    break;
 #endif
 	}
+#endif /* cu570m big removal 6 - end */
 
 	show_boot_progress (-9);
 #ifdef DEBUG
@@ -1482,6 +1603,7 @@ print_type (image_header_t *hdr)
 	case IH_COMP_NONE:	comp = "uncompressed";		break;
 	case IH_COMP_GZIP:	comp = "gzip compressed";	break;
 	case IH_COMP_BZIP2:	comp = "bzip2 compressed";	break;
+	case IH_COMP_LZMA:	comp = "lzma compressed";	break; /* cu570m */
 	default:		comp = "unknown compression";	break;
 	}
 
@@ -1514,6 +1636,8 @@ static void zfree(void *x, void *addr, unsigned nb)
 #define RESERVED	0xe0
 
 #define DEFLATED	8
+
+#ifndef COMPRESSED_UBOOT /* cu570m */
 
 int gunzip(void *dst, int dstlen, unsigned char *src, unsigned long *lenp)
 {
@@ -1576,6 +1700,8 @@ void bz_internal_error(int errcode)
 	printf ("BZIP2 internal error %d\n", errcode);
 }
 #endif /* CONFIG_BZIP2 */
+
+#endif /* #ifndef COMPRESSED_UBOOT */ /* cu570m */
 
 static void
 do_bootm_rtems (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[],

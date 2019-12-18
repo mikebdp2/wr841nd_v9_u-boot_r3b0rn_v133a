@@ -27,6 +27,49 @@ LIB	= $(obj)libcommon.a
 
 AOBJS	=
 
+ifeq ($(COMPRESSED_UBOOT),1) # cu570m condition branch
+COBJS-y += main.o
+COBJS-y += circbuf.o
+COBJS-y += cmd_boot.o
+COBJS-y += cmd_bootm.o
+COBJS-$(CONFIG_CMD_CACHE) += cmd_cache.o
+COBJS-$(CONFIG_CMD_CONSOLE) += cmd_console.o
+COBJS-$(CONFIG_CMD_DATE) += cmd_date.o
+ifdef CONFIG_4xx
+COBJS-$(CONFIG_CMD_SETGETDCR) += cmd_dcr.o
+endif
+COBJS-$(CONFIG_CMD_DISPLAY) += cmd_display.o
+COBJS-$(CONFIG_CMD_DOC) += cmd_doc.o
+COBJS-y += cmd_eeprom.o
+COBJS-$(CONFIG_CMD_FLASH) += cmd_flash.o
+COBJS-$(CONFIG_CMD_IMMAP) += cmd_immap.o
+COBJS-$(CONFIG_CMD_ITEST) += cmd_itest.o
+COBJS-y += cmd_mem.o
+COBJS-$(CONFIG_CMD_MII) += cmd_mii.o
+COBJS-$(CONFIG_CMD_MISC) += cmd_misc.o
+COBJS-y += cmd_nand.o
+COBJS-$(CONFIG_CMD_NET) += cmd_net.o
+COBJS-y += cmd_nvedit.o
+COBJS-$(CONFIG_CMD_REGINFO) += cmd_reginfo.o
+COBJS-$(CONFIG_CMD_SPI) += cmd_spi.o
+COBJS-y += command.o
+COBJS-y += console.o
+COBJS-y += devices.o
+COBJS-y += dlmalloc.o
+COBJS-y += docecc.o
+COBJS-y += environment.o
+COBJS-y += env_common.o
+COBJS-y += env_nowhere.o
+COBJS-y += exports.o
+COBJS-y += hush.o
+COBJS-y += lcd.o
+COBJS-y += lists.o
+COBJS-y += memsize.o
+COBJS-y += miiphybb.o
+COBJS-y += miiphyutil.o
+COBJS-y += serial.o
+COBJS-y += crc16.o
+else # old default path
 COBJS-y += main.o
 COBJS-y += ACEX1K.o
 COBJS-y += altera.o
@@ -137,12 +180,34 @@ COBJS-y += crc16.o
 COBJS-y += xyzModem.o
 COBJS-y += cmd_mac.o
 COBJS-$(CONFIG_CMD_MFSL) += cmd_mfsl.o
+endif # cu570m
+
+# cu570m start
+ifndef BOOT_FROM_NAND
+COBJS-y += flash.o
+endif
+
+ifeq ($(VXWORKS_UBOOT),1)
+COBJS-y += cmd_elf.o
+endif
+
+ifeq ($(TPWD_FOR_LINUX_CAL),1)
+COBJS-y += cmd_elf.o
+endif
+# cu570m end
 
 COBJS	:= $(COBJS-y)
 SRCS	:= $(AOBJS:.o=.S) $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(AOBJS) $(COBJS))
 
 CPPFLAGS += -I..
+
+# cu570m start
+ifeq ($(DUAL_FIRMWAREIMAGE_SUPPORT),1)
+CFLAGS += -DCONFIG_DUALIMAGE_SUPPORT
+OBJS += cmd_bdr.o
+endif
+# cu570m end
 
 all:	$(LIB) $(AOBJS)
 
