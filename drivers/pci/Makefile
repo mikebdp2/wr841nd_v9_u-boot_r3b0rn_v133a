@@ -25,12 +25,16 @@ include $(TOPDIR)/config.mk
 
 LIB 	:= $(obj)libpci.a
 
+ifeq ($(COMPRESSED_UBOOT),1) # cu570m condition branch
+COBJS-y += pci.o
+else # old default path
 COBJS-y += fsl_pci_init.o
 COBJS-y += pci.o
 COBJS-y += pci_auto.o
 COBJS-y += pci_indirect.o
 COBJS-y += tsi108_pci.o
 COBJS-y += w83c553f.o
+endif # cu570m
 
 COBJS	:= $(COBJS-y)
 SRCS 	:= $(COBJS:.o=.c)
