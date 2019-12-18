@@ -27,6 +27,23 @@
 #include <asm/cacheops.h>
 #include <asm/reboot.h>
 
+/* cu570m start */
+#if defined(CONFIG_AR7100)
+#include <asm/addrspace.h>
+#include <ar7100_soc.h>
+#endif
+
+#if defined(CONFIG_AR7240)
+#include <asm/addrspace.h>
+#include <ar7240_soc.h>
+#endif
+
+#if defined(CONFIG_ATHEROS)
+#include <asm/addrspace.h>
+#include <atheros.h>
+#endif
+/* cu570m end */
+
 #define cache_op(op,addr)						\
 	__asm__ __volatile__(						\
 	"	.set	push					\n"	\
@@ -43,9 +60,49 @@ void __attribute__((weak)) _machine_restart(void)
 
 int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
+/* cu570m condition branches */
+#if defined(CONFIG_ATHEROS)
+	while (1) {
+		ath_reg_wr(RST_RESET_ADDRESS, RST_RESET_FULL_CHIP_RESET_SET(1));
+	}
+/* cu570m start */
+#elif defined(CONFIG_AR7100)
+#ifndef COMPRESSED_UBOOT
+	fprintf(stdout, "\nResetting...\n");
+#endif  /* #ifndef COMPRESSED_UBOOT */
+	for (;;) {
+		ar7100_reg_wr(AR7100_RESET,
+			(AR7100_RESET_FULL_CHIP | AR7100_RESET_DDR));
+	}
+#elif defined(CONFIG_AR7240)
+#ifndef COMPRESSED_UBOOT
+	fprintf(stdout, "\nResetting...\n");
+#endif  /* #ifndef COMPRESSED_UBOOT */
+	for (;;) {
+#ifdef CONFIG_WASP
+		if (ar7240_reg_rd(AR7240_REV_ID) & 0xf) {
+			ar7240_reg_wr(AR7240_RESET,
+				(AR7240_RESET_FULL_CHIP | AR7240_RESET_DDR));
+		} else {
+			/*
+			 * WAR for full chip reset spi vs. boot-rom selection
+			 * bug in wasp 1.0
+			 */
+			ar7240_reg_wr (AR7240_GPIO_OE,
+				ar7240_reg_rd(AR7240_GPIO_OE) & (~(1 << 17)));
+		}
+#else
+		ar7240_reg_wr(AR7240_RESET,
+			(AR7240_RESET_FULL_CHIP | AR7240_RESET_DDR));
+#endif
+	}
+#else /* old default path */
 	_machine_restart();
-
+#endif
+/* cu570m end */
+#ifndef COMPRESSED_UBOOT /* cu570m */
 	fprintf(stderr, "*** reset failed ***\n");
+#endif  /* #ifndef COMPRESSED_UBOOT */ /* cu570m */
 	return 0;
 }
 

@@ -20,8 +20,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 # MA 02111-1307 USA
 #
+# MIPSFLAGS -> #MIPSFLAGS - cu570m
 v=$(shell $(AS) --version |grep "GNU assembler" |cut -d. -f2)
-MIPSFLAGS:=$(shell \
+#MIPSFLAGS:=$(shell \
 if [ "$v" -lt "14" ]; then \
 	echo "-mcpu=4kc"; \
 else \
@@ -30,10 +31,13 @@ fi)
 
 ifneq (,$(findstring 4KCle,$(CROSS_COMPILE)))
 ENDIANNESS = -EL
-else
-ENDIANNESS = -EB
+#else # cu570m
+#ENDIANNESS = -EB
 endif
 
-MIPSFLAGS += $(ENDIANNESS)
+# cu570m
+### R3B0RN $(R3B0RN_UBOOT_EXTRA_MIPSFLAGS) ###
+# MIPSFLAGS += $(ENDIANNESS)
+MIPSFLAGS += $(ENDIANNESS) -march=mips32r2 $(R3B0RN_UBOOT_EXTRA_MIPSFLAGS)
 
 PLATFORM_CPPFLAGS += $(MIPSFLAGS)
