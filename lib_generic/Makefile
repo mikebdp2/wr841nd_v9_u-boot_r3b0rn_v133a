@@ -25,6 +25,14 @@ include $(TOPDIR)/config.mk
 
 LIB	= $(obj)libgeneric.a
 
+ifeq ($(COMPRESSED_UBOOT),1) # cu570m condition branch
+COBJS-y += crc32.o
+COBJS-y += ctype.o
+COBJS-y += display_options.o
+COBJS-y += ldiv.o
+COBJS-y += string.o
+COBJS-y += vsprintf.o
+else # old default path
 COBJS-y += bzlib.o
 COBJS-y += bzlib_crctable.o
 COBJS-y += bzlib_decompress.o
@@ -39,6 +47,13 @@ COBJS-y += sha1.o
 COBJS-y += string.o
 COBJS-y += vsprintf.o
 COBJS-y += zlib.o
+endif # cu570m
+
+# cu570m start
+COBJS-y += LzmaDecode.o
+COBJS-y += LzmaWrapper.o
+CFLAGS += -DCONFIG_LZMA=1
+# cu570m end
 
 COBJS	:= $(COBJS-y)
 SRCS 	:= $(COBJS:.o=.c)
