@@ -33,6 +33,7 @@
 #define CONFIG_CMD_EEPROM	/* EEPROM read/write support	*/
 #define CONFIG_CMD_ELF		/* ELF (VxWorks) load/boot cmd	*/
 #define CONFIG_CMD_ENV		/* saveenv			*/
+#define CONFIG_CMD_ETHREG	/* S26 Reg RD/WR utility		*/ /* cu570m */
 #define CONFIG_CMD_EXT2		/* EXT2 Support			*/
 #define CONFIG_CMD_FAT		/* FAT support			*/
 #define CONFIG_CMD_FDC		/* Floppy Disk Support		*/
@@ -63,6 +64,7 @@
 #define CONFIG_CMD_PCI		/* pciinfo			*/
 #define CONFIG_CMD_PCMCIA	/* PCMCIA support		*/
 #define CONFIG_CMD_PING		/* ping support			*/
+#define CONFIG_CMD_PLL		/* Change CPU clock speeds		*/ /* cu570m */
 #define CONFIG_CMD_PORTIO	/* Port I/O			*/
 #define CONFIG_CMD_REGINFO	/* Register dump		*/
 #define CONFIG_CMD_REISER	/* Reiserfs support		*/

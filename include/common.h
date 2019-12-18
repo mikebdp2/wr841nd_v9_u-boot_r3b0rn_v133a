@@ -208,7 +208,11 @@ void	reset_cmd_timeout(void);
 /* lib_$(ARCH)/board.c */
 void	board_init_f  (ulong) __attribute__ ((noreturn));
 void	board_init_r  (gd_t *, ulong) __attribute__ ((noreturn));
+#ifdef COMPRESSED_UBOOT /* cu570m condition branch */
+int	checkboard    (char *);
+#else /* old default path */
 int	checkboard    (void);
+#endif /* #ifdef COMPRESSED_UBOOT */ /* cu570m */
 int	checkflash    (void);
 int	checkdram     (void);
 char *	strmhz(char *buf, long hz);
@@ -258,7 +262,11 @@ int env_complete(char *var, int maxv, char *cmdv[], int maxsz, char *buf);
 #endif
 
 void	pci_init      (void);
+#ifdef  COMPRESSED_UBOOT /* cu570m condition branch */
+int	pci_init_board(void);
+#else /* old default path */
 void	pci_init_board(void);
+#endif /* #ifdef COMPRESSED_UBOOT */ /* cu570m */
 void	pciinfo	      (int, int);
 
 #if defined(CONFIG_PCI) && (defined(CONFIG_4xx) && !defined(CONFIG_AP1000))
@@ -394,6 +402,7 @@ int	dcache_status (void);
 void	dcache_enable (void);
 void	dcache_disable(void);
 void	relocate_code (ulong, gd_t *, ulong) __attribute__ ((noreturn));
+void 	ar7240_ddr_tap_init(void); /* cu570m */
 ulong	get_endaddr   (void);
 void	trap_init     (ulong);
 #if defined (CONFIG_4xx)	|| \
