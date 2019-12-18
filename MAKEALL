@@ -569,11 +569,15 @@ LIST_au1xx0="		\
 	gth2		\
 "
 
+LIST_mips24k="ar7100" # cu570m
+
 LIST_mips="		\
 	${LIST_mips4kc}	\
 	${LIST_mips5kc}	\
 	${LIST_au1xx0}	\
+	${LIST_mips24k}	\
 "
+# ${LIST_mips24k} - cu570m
 
 #########################################################################
 ## MIPS Systems		(little endian)
