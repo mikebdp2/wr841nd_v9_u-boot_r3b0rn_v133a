@@ -87,8 +87,36 @@ lzma:
 	fi
 
 ######## prepare toolchain ########
+toolchain_lede:
+	@echo Uncompressing LEDE toolchain, please wait for a few minutes ...
+	cd $(TOPDIR)/toolchain/ && \
+	rm -rf ./lede-sdk-17.01.6-ar71xx-generic_gcc-5.4.0_musl-1.1.16.Linux-x86_64/ && \
+	tar -xf ./lede-sdk-17.01.6-ar71xx-generic_gcc-5.4.0_musl-1.1.16.Linux-x86_64.tar.xz && \
+	rm -rf $(BUILD_DIR)/gcc-mips/ && \
+	mkdir $(BUILD_DIR)/gcc-mips/ && \
+	mkdir $(BUILD_DIR)/gcc-mips/staging_dir/ && \
+	cd ./lede-sdk-17.01.6-ar71xx-generic_gcc-5.4.0_musl-1.1.16.Linux-x86_64/ && \
+	mv ./staging_dir/toolchain-mips_24kc_gcc-5.4.0_musl-1.1.16/ $(BUILD_DIR)/gcc-mips/staging_dir/usr/ && \
+	mv ./staging_dir/host/ $(BUILD_DIR)/gcc-mips/staging_dir/host/ && \
+	cd ./../ && \
+	rm -rf ./lede-sdk-17.01.6-ar71xx-generic_gcc-5.4.0_musl-1.1.16.Linux-x86_64/
+
+toolchain_openwrt:
+	@echo Uncompressing OpenWRT toolchain, please wait for a few minutes ...
+	cd $(TOPDIR)/toolchain/ && \
+	rm -rf ./OpenWrt-SDK-15.05.1-ar71xx-generic_gcc-4.8-linaro_uClibc-0.9.33.2.Linux-x86_64/ && \
+	tar -jxf ./OpenWrt-SDK-15.05.1-ar71xx-generic_gcc-4.8-linaro_uClibc-0.9.33.2.Linux-x86_64.tar.bz2 && \
+	rm -rf $(BUILD_DIR)/gcc-mips/ && \
+	mkdir $(BUILD_DIR)/gcc-mips/ && \
+	mkdir $(BUILD_DIR)/gcc-mips/staging_dir/ && \
+	cd ./OpenWrt-SDK-15.05.1-ar71xx-generic_gcc-4.8-linaro_uClibc-0.9.33.2.Linux-x86_64/ && \
+	mv ./staging_dir/toolchain-mips_34kc_gcc-4.8-linaro_uClibc-0.9.33.2/ $(BUILD_DIR)/gcc-mips/staging_dir/usr/ && \
+	mv ./staging_dir/host/ $(BUILD_DIR)/gcc-mips/staging_dir/host/ && \
+	cd ./../ && \
+	rm -rf ./OpenWrt-SDK-15.05.1-ar71xx-generic_gcc-4.8-linaro_uClibc-0.9.33.2.Linux-x86_64/
+
 toolchain_tplink:
-	@echo Uncompressing toolchain, please wait for a few minutes ...
+	@echo Uncompressing TP-Link toolchain, please wait for a few minutes ...
 	cd $(TOPDIR)/toolchain/ && \
 	rm -rf ./gcc-4.3.3/ && \
 	tar -jxf gcc-4.3.3.tar.bz2 && \

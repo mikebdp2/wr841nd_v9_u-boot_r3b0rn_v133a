@@ -40,6 +40,11 @@ If you would like to use it, prepare this toolchain_tplink :
 
         make TOOLPREFIX=mips-linux-uclibc- FLASH_SIZE=4 toolchain_tplink
 
+or these alternative prebuilt toolchains :
+
+	make TOOLPREFIX=mips-openwrt-linux-uclibc- FLASH_SIZE=4 toolchain_openwrt
+	make TOOLPREFIX=mips-openwrt-linux-musl- FLASH_SIZE=4 toolchain_lede
+
 But you can get or build your own, much better, opensource toolchain, and install it:
 
 	cd ./path_to/wr841nd_v9_u-boot_r3b0rn/build/
